@@ -12,7 +12,7 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  azureServiceConnection: 'medappoint-azure-connection'
+  azureServiceConnection: 'moath-sp-new'
   acrName: 'medappointacr'
   imageName: 'medappoint-app'
   resourceGroupName: 'medappoint-rg'
