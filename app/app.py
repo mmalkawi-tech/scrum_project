@@ -4,7 +4,7 @@ MedAppoint - Patient Appointment Management API
 import os
 from datetime import datetime
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, redirect
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import sessionmaker, declarative_base, relationship
 
@@ -92,19 +92,58 @@ def list_appointments():
         session.close()
 
 
+@app.get("/appointments/new")
+def new_appointment_form():
+    session = SessionLocal()
+    try:
+        patients = session.query(Patient).all()
+    finally:
+        session.close()
+
+    if not patients:
+        return "<p>No patients exist yet. Create one via POST /patients first.</p>", 200
+
+    options = "".join(f'<option value="{p.id}">{p.full_name} (id {p.id})</option>' for p in patients)
+    return f"""
+    <!doctype html>
+    <html>
+    <head><title>Book an Appointment - MedAppoint</title></head>
+    <body style="font-family: sans-serif; max-width: 480px; margin: 40px auto;">
+      <h2>Book an Appointment</h2>
+      <form method="POST" action="/appointments">
+        <label>Patient</label><br>
+        <select name="patient_id" required>{options}</select><br><br>
+        <label>Doctor</label><br>
+        <input type="text" name="doctor_name" required><br><br>
+        <label>Date &amp; time</label><br>
+        <input type="datetime-local" name="scheduled_at" required><br><br>
+        <label>Reason</label><br>
+        <input type="text" name="reason"><br><br>
+        <button type="submit">Book</button>
+      </form>
+    </body>
+    </html>
+    """
+
+
 @app.post("/appointments")
 def create_appointment():
-    data = request.get_json(force=True)
+    data = request.get_json(silent=True) or request.form
     session = SessionLocal()
     try:
         appt = Appointment(
-            patient_id=data["patient_id"],
+            patient_id=int(data["patient_id"]),
             doctor_name=data["doctor_name"],
             scheduled_at=datetime.fromisoformat(data["scheduled_at"]),
             reason=data.get("reason"),
         )
         session.add(appt)
         session.commit()
+        if request.form:
+            return f"""
+            <p>Appointment #{appt.id} booked with {appt.doctor_name}.</p>
+            <p><a href="/appointments/new">Book another</a></p>
+            """, 201
         return jsonify(id=appt.id), 201
     finally:
         session.close()
