@@ -38,9 +38,9 @@ stages:
               targetType: inline
               script: |
                 set -e
-                curl -sLo terraform.zip https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip
-                unzip -o terraform.zip
-                sudo mv terraform /usr/local/bin/
+                curl -sLo /tmp/terraform.zip https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip
+                unzip -o /tmp/terraform.zip -d /tmp/tfinstall
+                sudo mv /tmp/tfinstall/terraform /usr/local/bin/
                 terraform version
 
           - task: AzureCLI@2
